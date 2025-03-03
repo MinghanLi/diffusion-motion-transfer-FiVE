@@ -1,10 +1,10 @@
 device: 'cuda'
 seed: null
-output_path: 'results/locomotive_car'
-data_path: 'data/locomotive'
-latents_path: 'data/locomotive/ddim_latents'
-source_prompt: "Amazing quality, masterpiece, A locomotive rides in a forest"
-target_prompt: "Amazing quality, masterpiece, A car driving in a forest"
+output_path: 'results/aircraft_object_multiple'
+data_path: 'data/loveu/aircraft-landing'
+latents_path: 'data/loveu/aircraft-landing/ddim_latents'
+source_prompt: "A Detla Airlines aircraft descends onto the runaway during a cloudless morning, Amazing quality, masterpiece"
+target_prompt: "A brightly colored cyberpunk aircraft descends onto the runway with a bustling cityscape in the background. Amazing quality, masterpiece, "
 negative_prompt: "bad quality, distortions, unrealistic, distorted image, watermark, signature"
 guidance_scale: 10
 

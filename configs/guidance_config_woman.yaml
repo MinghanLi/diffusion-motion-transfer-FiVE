@@ -1,11 +1,11 @@
 device: 'cuda'
 seed: null
-output_path: 'results/locomotive_car'
-data_path: 'data/locomotive'
-latents_path: 'data/locomotive/ddim_latents'
-source_prompt: "Amazing quality, masterpiece, A locomotive rides in a forest"
-target_prompt: "Amazing quality, masterpiece, A car driving in a forest"
-negative_prompt: "bad quality, distortions, unrealistic, distorted image, watermark, signature"
+output_path: 'results/woman-running_sculpture'
+data_path: 'data/woman-running'
+latents_path: 'data/woman-running/ddim_latents'
+source_prompt: "A woman is runing in a park, Amazing quality, masterpiece"
+target_prompt: "A marble sculpture of a woman running, Venus de Milo, Amazing quality, masterpiece"
+negative_prompt: "ugly, blurry, low res, unrealistic, unaesthetic"
 guidance_scale: 10
 
 with_lr_decay: True

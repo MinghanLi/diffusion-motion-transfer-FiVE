@@ -1,11 +1,13 @@
 import argparse
 import copy
 import os
+import json
 from pathlib import Path
 
 import numpy as np
 import torch
 import torch.nn as nn
+import torch.nn.functional as F
 from PIL import Image
 from diffusers import TextToVideoSDPipeline, DDIMScheduler
 from diffusers.pipelines.text_to_video_synthesis.pipeline_text_to_video_synth import tensor2vid
@@ -65,6 +67,7 @@ class Guidance(nn.Module):
 
         model_key = "cerspense/zeroscope_v2_576w"
         self.resolution = (576, 320)
+        self.ori_resolution = None
 
         print("Loading video model")
 
@@ -160,6 +163,16 @@ class Guidance(nn.Module):
         data_path = self.config["data_path"]
         images = list(Path(data_path).glob("*.png")) + list(Path(data_path).glob("*.jpg"))
         images = sorted(images, key=lambda x: int(x.stem))
+        if len(images) > self.config["max_frames"]:
+            print('!'*50)
+            print(f'Video frames {len(images)} > Max frames {self.config["max_frames"]}! Use the first {self.config["max_frames"]} frames.')
+            print('!'*50)
+            if len(images) >= 2*self.config["max_frames"]:
+                images = images[::2][:self.config["max_frames"]]
+            else:
+                images = images[:self.config["max_frames"]]
+        width, height = Image.open(images[0]).size
+        self.ori_resolution = (width, height)
         video = torch.stack([ToTensor()(Image.open(img).resize(self.resolution)) for img in images]).cuda()
         video = video[: self.config["max_frames"]]
 
@@ -334,6 +347,16 @@ class Guidance(nn.Module):
             clean_memory()
         with torch.autocast(device_type="cuda", dtype=torch.float16):
             decoded_frames = self.decode_latents(x)
+        # ZeroScope only support [576, 320] resolution
+        if self.ori_resolution != self.resolution:
+            decoded_frames = torch.stack([
+                F.interpolate(
+                    decoded_frames_i, 
+                    (self.ori_resolution[1], self.ori_resolution[0]),
+
+                )
+                for decoded_frames_i in decoded_frames
+            ])
         decoded_frames = np.array(tensor2vid(decoded_frames))  # f h w c numpy [0,255]
         # save frames
         Path(self.config["output_path"], "result_frames").mkdir(parents=True, exist_ok=True)
@@ -342,13 +365,47 @@ class Guidance(nn.Module):
 
         save_video(decoded_frames, os.path.join(self.config["output_path"], "result.mp4"))
 
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--config_path", type=str, default="configs/guidance_config.yaml")
+    parser.add_argument("--dataset_json", type=str, default=None, help="configs/dataset.json")
+    parser.add_argument("--data_dir", type=str, default="data")
+    parser.add_argument("--latent_dir", type=str, default="outputs")
+    parser.add_argument("--max_number_of_frames", type=int, default=40)
     opt = parser.parse_args()
-    config = OmegaConf.load(opt.config_path)
-    Path(config["output_path"]).mkdir(parents=True, exist_ok=True)
-    OmegaConf.save(config, Path(config["output_path"]) / "config.yaml")
+    
+    if opt.dataset_json is None:
+        config = OmegaConf.load(opt.config_path)
+        config["max_number_of_frames"] = opt.max_number_of_frames
+        Path(config["output_path"]).mkdir(parents=True, exist_ok=True)
+        OmegaConf.save(config, Path(config["output_path"]) / "config.yaml")
 
-    guidance = Guidance(config)
-    guidance.run()
+        guidance = Guidance(config)
+        guidance.run()
+
+    else:
+
+        with open(opt.dataset_json, 'r') as json_file:
+            data = json.load(json_file)
+        
+        num_videos = len(data)
+        
+        for vid, entry in enumerate(data):
+            print(f"Processing {vid}/{num_videos} video: {entry['video_name']} ...")
+
+            config = OmegaConf.load(opt.config_path)
+            config["max_number_of_frames"] = opt.max_number_of_frames
+
+            config["output_path"] = os.path.join(opt.latent_dir, entry['video_name'])
+            config["data_path"] = os.path.join(opt.data_dir, entry['video_name'])
+            config["latents_path"] = os.path.join(opt.latent_dir, entry['video_name'], "ddim_latents")
+            config["source_prompt"] = entry["source_prompt"] 
+            config["target_prompt"] = entry["target_prompt"]
+            config["negative_prompt"] = entry["negative_prompt"]
+
+            Path(config["output_path"]).mkdir(parents=True, exist_ok=True)
+            OmegaConf.save(config, Path(config["output_path"]) / "config.yaml")
+            
+            guidance = Guidance(config)
+            guidance.run()

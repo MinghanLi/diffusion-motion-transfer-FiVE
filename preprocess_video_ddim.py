@@ -1,5 +1,6 @@
 import argparse
 import os
+import json
 from pathlib import Path
 import numpy as np
 import torch
@@ -63,13 +64,15 @@ class Preprocess(nn.Module):
     @torch.no_grad()
     def ddim_inversion(self, cond, latent, save_path, save_latents=True):
         timesteps = reversed(self.scheduler.timesteps)
+ 
         with torch.autocast(device_type="cuda", dtype=torch.float16):
             for i, t in enumerate(tqdm(timesteps)):
                 cond_batch = cond.repeat(latent.shape[0], 1, 1)
 
                 alpha_prod_t = self.scheduler.alphas_cumprod[t]
                 alpha_prod_t_prev = (
-                    self.scheduler.alphas_cumprod[timesteps[i - 1]] if i > 0 else self.scheduler.final_alpha_cumprod
+                    self.scheduler.alphas_cumprod[timesteps[i - 1]] 
+                    if i > 0 else self.scheduler.final_alpha_cumprod
                 )
 
                 mu = alpha_prod_t**0.5
@@ -87,8 +90,9 @@ class Preprocess(nn.Module):
         return latent
 
     @torch.no_grad()
-    def ddim_sample(self, x, cond):
+    def ddim_sample(self, x, cond, save_path):
         timesteps = self.scheduler.timesteps
+
         with torch.autocast(device_type="cuda", dtype=torch.float16):
             for i, t in enumerate(tqdm(timesteps)):
                 cond_batch = cond.repeat(x.shape[0], 1, 1)
@@ -107,6 +111,13 @@ class Preprocess(nn.Module):
 
                 pred_x0 = (x - sigma * eps) / mu
                 x = mu_prev * pred_x0 + sigma_prev * eps
+
+                if i % 100 == 0 or i == (len(timesteps)-1):
+                    decoded_latent = self.decode_latents(x.half())
+                    video = tensor2vid(decoded_latent)
+                    save_path_rec = '/'.join(save_path.split('/')[:-1] + ["ddim_rec"])
+                    os.makedirs(save_path_rec, exist_ok=True)
+                    save_video(video, str(Path(save_path_rec) / f"timestep{str(t)}.mp4"))
 
         return x
 
@@ -154,11 +165,10 @@ class Preprocess(nn.Module):
         video = video.permute(0, 2, 1, 3, 4).reshape(bsz * frames, channel, width, height)
         latents = self.vae.config.scaling_factor * self.vae.encode(video.cuda().half()).latent_dist.sample()
         latents = latents[None, :].reshape((1, frames, latents.shape[1]) + latents.shape[2:]).permute(0, 2, 1, 3, 4)
-
         inverted_x = self.ddim_inversion(cond, latents, save_path, save_latents=True)
 
         if self.config["save_ddim_reconstruction"]:
-            latent_reconstruction = self.ddim_sample(inverted_x, cond)
+            latent_reconstruction = self.ddim_sample(inverted_x, cond, save_path)
             decoded_latent = self.decode_latents(latent_reconstruction.half())
             video = tensor2vid(decoded_latent)
             save_video(video, str(Path(save_path) / f"result.mp4"))
@@ -186,7 +196,33 @@ if __name__ == "__main__":
     # # ================================================================================================
     parser = argparse.ArgumentParser()
     parser.add_argument("--config_path", type=str, default="configs/preprocess_config.yaml")
+    parser.add_argument("--dataset_json", type=str, default=None)
+    parser.add_argument("--data_dir", type=str, default="data")
+    parser.add_argument("--latent_dir", type=str, default="outputs")
+    parser.add_argument("--max_number_of_frames", type=int, default=40)
     opt = parser.parse_args()
-    config = OmegaConf.load(opt.config_path)
 
-    run(config)
+    if opt.dataset_json is None:
+        config = OmegaConf.load(opt.config_path)
+        config["max_number_of_frames"] = opt.max_number_of_frames
+        run(config)
+    else:
+        with open(opt.dataset_json, 'r') as json_file:
+            data = json.load(json_file)
+        
+        num_videos = len(data)
+        processed_video_names = []
+        
+        for vid, entry in enumerate(data):
+            if entry["video_name"] in processed_video_names:
+                continue
+            print(f"Processing {vid}/{num_videos} video: {entry['video_name']} ...")
+
+            config = OmegaConf.load(opt.config_path)
+            config["max_number_of_frames"] = opt.max_number_of_frames
+
+            config["video_path"] =  os.path.join(opt.data_dir, entry['video_name'])
+            config["save_dir"] = os.path.join(opt.latent_dir, entry['video_name'], "ddim_latents")
+            config["prompt"] = entry["source_prompt"] 
+
+            run(config)

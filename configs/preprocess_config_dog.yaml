@@ -1,0 +1,8 @@
+video_path: data/davis/dog
+save_dir: data/davis/dog/ddim_latents
+max_number_of_frames: 24
+
+n_timesteps: 999
+prompt: Amazing quality, masterpiece, A black dog running in front of the fence.
+negative_prompt: ""
+save_ddim_reconstruction: data/davis/dog/ddim_rec # False

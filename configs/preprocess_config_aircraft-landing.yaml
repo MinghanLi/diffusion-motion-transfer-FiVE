@@ -1,0 +1,8 @@
+video_path: data/loveu/aircraft-landing
+save_dir: data/loveu/aircraft-landing/ddim_latents
+max_number_of_frames: 24
+
+n_timesteps: 999
+prompt: Amazing quality, masterpiece, A Detla Airlines aircraft descends onto the runaway during a cloudless morning.
+negative_prompt: ""
+save_ddim_reconstruction: data/loveu/aircraft-landing/ddim_rec # False

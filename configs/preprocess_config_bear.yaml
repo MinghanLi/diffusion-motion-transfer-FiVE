@@ -1,0 +1,8 @@
+video_path: data/davis/bear
+save_dir: data/davis/bear/ddim_latents
+max_number_of_frames: 24
+
+n_timesteps: 999
+prompt: Amazing quality, masterpiece, A bear working on the rocks.
+negative_prompt: ""
+save_ddim_reconstruction: data/davis/bear/ddim_rec # False

@@ -1,10 +1,10 @@
 device: 'cuda'
 seed: null
-output_path: 'results/locomotive_car'
-data_path: 'data/locomotive'
-latents_path: 'data/locomotive/ddim_latents'
-source_prompt: "Amazing quality, masterpiece, A locomotive rides in a forest"
-target_prompt: "Amazing quality, masterpiece, A car driving in a forest"
+output_path: 'results/wolf_elphant'
+data_path: 'data/wolf'
+latents_path: 'data/wolf/ddim_latents'
+source_prompt: "A wolf is looking around, Amazing quality, masterpiece"
+target_prompt: "A elphant is looking around, Amazing quality, masterpiece"
 negative_prompt: "bad quality, distortions, unrealistic, distorted image, watermark, signature"
 guidance_scale: 10
 

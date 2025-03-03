@@ -1,10 +1,10 @@
 device: 'cuda'
 seed: null
-output_path: 'results/locomotive_car'
+output_path: 'results/locomotive_motorbike'
 data_path: 'data/locomotive'
 latents_path: 'data/locomotive/ddim_latents'
 source_prompt: "Amazing quality, masterpiece, A locomotive rides in a forest"
-target_prompt: "Amazing quality, masterpiece, A car driving in a forest"
+target_prompt: "Amazing quality, masterpiece, A motorbike driving in a forest"
 negative_prompt: "bad quality, distortions, unrealistic, distorted image, watermark, signature"
 guidance_scale: 10
 

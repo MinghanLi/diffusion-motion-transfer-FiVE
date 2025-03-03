@@ -1,6 +1,6 @@
-edit_video_path: results/locomotive_car/result.mp4
-original_video_path: data/locomotive/ddim_latents/original.mp4
-output_path: results/locomotive_car
+edit_video_path: results/woman-running_sculpture/result.mp4
+original_video_path: data/woman-running_sculpture/ddim_latents/original.mp4
+output_path: results/woman-running_sculpture
 
 # foreground mask of the first frame to calculate trajectories only on the foreground
 use_mask: False

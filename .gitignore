@@ -1,1 +1,7 @@
 .idea
+
+inf_motion_fidelity.sh
+
+data/
+outputs/
+results/
