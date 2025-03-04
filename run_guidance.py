@@ -421,6 +421,9 @@ if __name__ == "__main__":
             config["target_prompt"] = entry["target_prompt"]
             config["negative_prompt"] = entry["negative_prompt"]
 
+            if not os.path.exists(config["latents_path"]):
+                continue
+
             Path(config["output_path"]).mkdir(parents=True, exist_ok=True)
             OmegaConf.save(config, Path(config["output_path"]) / "config.yaml")
             
