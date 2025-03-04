@@ -181,6 +181,10 @@ class Preprocess(nn.Module):
 
 def run(opt):
     save_path = opt.save_dir
+    if os.path.exists(save_path):
+        print(f"This video has been processed! Skip {save_path}")
+        return 
+
     os.makedirs(save_path, exist_ok=True)
 
     model = Preprocess(opt)

@@ -409,6 +409,10 @@ if __name__ == "__main__":
             config["target_prompt"] = entry["target_prompt"]
             config["negative_prompt"] = entry["negative_prompt"]
 
+            if os.path.exists(config["output_path"]):
+                print(f"This video has been processed! Skip {config['output_path']}")
+                continue
+
             Path(config["output_path"]).mkdir(parents=True, exist_ok=True)
             OmegaConf.save(config, Path(config["output_path"]) / "config.yaml")
             
