@@ -161,8 +161,13 @@ class Guidance(nn.Module):
     def get_data(self):
         # load video
         data_path = self.config["data_path"]
-        images = list(Path(data_path).glob("*.png")) + list(Path(data_path).glob("*.jpg"))
-        images = sorted(images, key=lambda x: int(x.stem))
+        # images = list(Path(data_path).glob("*.png")) + list(Path(data_path).glob("*.jpg"))
+        # images = sorted(images, key=lambda x: int(x.stem))
+        images = []
+        for file in os.listdir(data_path):
+            if file.lower().endswith((".png", ".jpg", ".jpeg")):  # Include .jpeg if needed
+                images.append(os.path.join(data_path, file))
+
         if len(images) > self.config["max_frames"]:
             print('!'*50)
             print(f'Video frames {len(images)} > Max frames {self.config["max_frames"]}! Use the first {self.config["max_frames"]} frames.')

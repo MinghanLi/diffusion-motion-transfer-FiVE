@@ -153,8 +153,13 @@ class Preprocess(nn.Module):
             video = read_video(data_path, pts_unit="sec")[0].permute(0, 3, 1, 2).cuda() / 255
             video = [ToPILImage()(video[i]).resize(self.resolution) for i in range(video.shape[0])]
         else:
-            images = list(Path(data_path).glob("*.png")) + list(Path(data_path).glob("*.jpg"))
-            images = sorted(images, key=lambda x: int(x.stem))
+
+            # images = list(Path(data_path).glob("*.png")) + list(Path(data_path).glob("*.jpg"))
+            # images = sorted(images, key=lambda x: int(x.stem))
+            images = []
+            for file in os.listdir(data_path):
+                if file.lower().endswith((".png", ".jpg", ".jpeg")):  # Include .jpeg if needed
+                    images.append(os.path.join(data_path, file))
             video = [Image.open(img).resize(self.resolution) for img in images]
 
         video = video[: self.config["max_number_of_frames"]]
