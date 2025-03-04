@@ -95,6 +95,7 @@ def prepare_latents(model, video, batch_size=1):
 
     alpha_prod_T = model.scheduler.alphas_cumprod[noisest]
     mu_T, sigma_T = alpha_prod_T**0.5, (1 - alpha_prod_T) ** 0.5
+    print(noisy_latent.shape, init_latents.shape)
     eps = (noisy_latent - mu_T * init_latents) / sigma_T
 
     # get latents
@@ -113,6 +114,7 @@ def high_freqs_replacement_downsampling(noisy_latent, noise, config):
         noisy_latent.shape[-2] // config["downsample_factor"],
         noisy_latent.shape[-1] // config["downsample_factor"],
     )
+    batch_size = noise.shape[0]
     noise = rearrange(noise, "b c f h w -> (b f) c h w")
     noise_down = F.interpolate(noise, size=(new_h, new_w), mode="bilinear", align_corners=True, antialias=True)
     noise_up = F.interpolate(
@@ -131,6 +133,5 @@ def high_freqs_replacement_downsampling(noisy_latent, noise, config):
         antialias=True,
     )
     noisy_latent = low_freqs + high_freqs
-    noisy_latent = rearrange(noisy_latent, "(b f) c h w -> b c f h w", f=config["max_frames"])
+    noisy_latent = rearrange(noisy_latent, "(b f) c h w -> b c f h w", b=batch_size)
     return noisy_latent
-

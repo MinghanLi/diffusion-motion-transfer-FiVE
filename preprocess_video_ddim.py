@@ -160,6 +160,7 @@ class Preprocess(nn.Module):
             for file in os.listdir(data_path):
                 if file.lower().endswith((".png", ".jpg", ".jpeg")):  # Include .jpeg if needed
                     images.append(os.path.join(data_path, file))
+            images = sorted(images)
             video = [Image.open(img).resize(self.resolution) for img in images]
 
         video = video[: self.config["max_number_of_frames"]]
@@ -209,6 +210,7 @@ if __name__ == "__main__":
     parser.add_argument("--data_dir", type=str, default="data")
     parser.add_argument("--latent_dir", type=str, default="outputs")
     parser.add_argument("--max_number_of_frames", type=int, default=40)
+    parser.add_argument("--start_index", type=int, default=0)
     opt = parser.parse_args()
 
     if opt.dataset_json is None:
@@ -222,9 +224,10 @@ if __name__ == "__main__":
         num_videos = len(data)
         processed_video_names = []
         
-        for vid, entry in enumerate(data):
+        for vid, entry in enumerate(data[opt.start_index:]):
             if entry["video_name"] in processed_video_names:
                 continue
+            processed_video_names.append(entry["video_name"])
             print(f"Processing {vid}/{num_videos} video: {entry['video_name']} ...")
 
             config = OmegaConf.load(opt.config_path)
@@ -232,6 +235,10 @@ if __name__ == "__main__":
 
             config["video_path"] =  os.path.join(opt.data_dir, entry['video_name'])
             config["save_dir"] = os.path.join(opt.latent_dir, entry['video_name'], "ddim_latents")
+            if os.path.exists(config["save_dir"]):
+                print(f'Existed! Skip {config["save_dir"]}')
+                continue
+
             config["prompt"] = entry["source_prompt"] 
 
             run(config)

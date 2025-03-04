@@ -382,7 +382,7 @@ if __name__ == "__main__":
     
     if opt.dataset_json is None:
         config = OmegaConf.load(opt.config_path)
-        config["max_number_of_frames"] = opt.max_number_of_frames
+        config["max_frames"] = opt.max_number_of_frames
         Path(config["output_path"]).mkdir(parents=True, exist_ok=True)
         OmegaConf.save(config, Path(config["output_path"]) / "config.yaml")
 
@@ -393,25 +393,33 @@ if __name__ == "__main__":
 
         with open(opt.dataset_json, 'r') as json_file:
             data = json.load(json_file)
+
+        type_idx = opt.dataset_json.split('/')[-1].split('_')[0].replace("edit", "")
         
         num_videos = len(data)
-        
         for vid, entry in enumerate(data):
-            print(f"Processing {vid}/{num_videos} video: {entry['video_name']} ...")
+            print()
+            print(f"Edited type {type_idx}, Processing {vid}/{num_videos} video: {entry['video_name']} ...")
+            print()
 
             config = OmegaConf.load(opt.config_path)
-            config["max_number_of_frames"] = opt.max_number_of_frames
+            config["max_frames"] = opt.max_number_of_frames
 
-            config["output_path"] = os.path.join(opt.latent_dir, entry['video_name'])
+            type_idx = opt.dataset_json.split('/')[-1].split('_')[0].replace("edit", "")
+            config["output_path"] = os.path.join(
+                opt.latent_dir, 
+                entry['video_name'],
+                type_idx + '_' + entry["target_prompt"][:20]
+            )
+            if os.path.exists(os.path.join(config["output_path"], 'result.mp4')):
+                print(f"This video has been processed! Skip {config['output_path']}")
+                continue
+
             config["data_path"] = os.path.join(opt.data_dir, entry['video_name'])
             config["latents_path"] = os.path.join(opt.latent_dir, entry['video_name'], "ddim_latents")
             config["source_prompt"] = entry["source_prompt"] 
             config["target_prompt"] = entry["target_prompt"]
             config["negative_prompt"] = entry["negative_prompt"]
-
-            if os.path.exists(config["output_path"]):
-                print(f"This video has been processed! Skip {config['output_path']}")
-                continue
 
             Path(config["output_path"]).mkdir(parents=True, exist_ok=True)
             OmegaConf.save(config, Path(config["output_path"]) / "config.yaml")
